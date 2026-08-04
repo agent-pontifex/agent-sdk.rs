@@ -49,7 +49,7 @@ fn assert_public_safe(value: &Value) {
                     ] {
                         assert!(
                             !lower.contains(forbidden),
-                            "discovery metadata contains credential-shaped key {key}"
+                            "discovery metadata contains credential-shaped key {key}",
                         );
                     }
                     visit(nested, depth + 1, nodes);
@@ -64,7 +64,7 @@ fn assert_public_safe(value: &Value) {
                 assert!(text.len() <= 1_024, "discovery string is too large");
                 assert!(
                     !text.chars().any(char::is_control),
-                    "discovery string contains control characters"
+                    "discovery string contains control characters",
                 );
             }
             _ => {}
@@ -83,7 +83,7 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
             descriptor
                 .validate_for(*kind, ProtocolVersionRange::current())
                 .expect("fixture must negotiate"),
-            CURRENT_PROTOCOL_MAJOR
+            CURRENT_PROTOCOL_MAJOR,
         );
         assert_public_safe(&raw);
 
@@ -98,12 +98,12 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
                     .extensions
                     .keys()
                     .all(|key| key.starts_with("fiducia.")),
-                "{name} leaked a non-Fiducia extension"
+                "{name} leaked a non-Fiducia extension",
             );
         } else {
             assert!(
                 descriptor.extensions.is_empty(),
-                "community profile {name} must be vendor-neutral"
+                "community profile {name} must be vendor-neutral",
             );
         }
     }
