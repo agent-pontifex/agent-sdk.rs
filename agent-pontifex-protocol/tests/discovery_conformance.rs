@@ -112,5 +112,28 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
                 "community profile {name} must be vendor-neutral",
             );
         }
+
+        if *name == "fiducia-coordinator.json" {
+            assert!(
+                descriptor
+                    .capabilities
+                    .iter()
+                    .all(|capability| !capability.starts_with("coordinator.jobs.")),
+                "Fiducia must not claim the community job wire before an adapter exists",
+            );
+            assert_eq!(
+                descriptor.extensions["fiducia.compatibility"]["community_job_adapter"],
+                "required",
+            );
+            assert_eq!(
+                descriptor.extensions["fiducia.compatibility"]["direct_job_wire_compatible"],
+                false,
+            );
+            assert_eq!(
+                descriptor.extensions["fiducia.compatibility"]
+                    ["translation_must_preserve_fencing"],
+                true,
+            );
+        }
     }
 }
