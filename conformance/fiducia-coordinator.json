@@ -8,25 +8,47 @@
   "service": "coordinator",
   "implementation": "fiducia-cloud-control-plane",
   "capabilities": [
-    "coordinator.jobs.cancel",
-    "coordinator.jobs.claim",
-    "coordinator.jobs.complete",
-    "coordinator.jobs.create",
-    "coordinator.jobs.heartbeat",
-    "coordinator.jobs.idempotency",
-    "coordinator.jobs.retry",
-    "coordinator.review.human-approval",
-    "coordinator.supervision.reconcile"
+    "coordinator.agents.register",
+    "coordinator.repository-path-leases",
+    "coordinator.work-items.approve",
+    "coordinator.work-items.claim",
+    "coordinator.work-items.get",
+    "coordinator.work-items.review",
+    "coordinator.work-items.submit",
+    "coordinator.work-items.transition"
   ],
   "extensions": {
     "fiducia.authority": {
       "backend": "fiducia-node",
+      "compare_and_set": true,
+      "elections": true,
       "linearizable_leases": true,
       "monotonic_fencing": true
     },
+    "fiducia.bridge": {
+      "configured": false,
+      "separate_internal_boundary": true
+    },
+    "fiducia.compatibility": {
+      "community_job_adapter": "required",
+      "direct_job_wire_compatible": false,
+      "translation_must_preserve_fencing": true
+    },
+    "fiducia.persistence": {
+      "customer_operated": true,
+      "postgres": true,
+      "startup_schema_apply_opt_in": true
+    },
     "fiducia.review": {
+      "diversity_checks": true,
       "human_approval": true,
+      "model_review": true,
       "triad_review": true
+    },
+    "fiducia.supervision": {
+      "reconciliation": true,
+      "recovery_planning": true,
+      "rich_heartbeats": true
     },
     "fiducia.tenancy": {
       "customer_boundary": true,
