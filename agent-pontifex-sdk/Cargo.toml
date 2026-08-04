@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 description = "Typed, credential-safe HTTP client for Agent Pontifex bridges and coordinators"
 license = "MIT"
-repository = "https://github.com/ORESoftware/ai-agent-bridge.rs"
+repository = "https://github.com/agent-pontifex/agent-sdk.rs"
 
 [dependencies]
 agent-pontifex-protocol = { path = "../agent-pontifex-protocol" }

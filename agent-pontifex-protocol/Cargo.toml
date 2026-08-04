@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 description = "Vendor-neutral wire contracts shared by AI agent bridges, coordinators, and clients"
 license = "MIT"
-repository = "https://github.com/ORESoftware/ai-agent-bridge.rs"
+repository = "https://github.com/agent-pontifex/agent-sdk.rs"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -1,0 +1,6 @@
+{
+  "source_repository": "ORESoftware/ai-agent-bridge.rs",
+  "source_branch": "agent/shared-protocol-sdk-foundation",
+  "source_commit": "ce8e853ffd907c14aaed09afd1ac18adfe28c8de",
+  "split_commit": "7392ffc05f345274a453ba261ebc4b9eda665e55"
+}
