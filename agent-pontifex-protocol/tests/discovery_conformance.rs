@@ -130,8 +130,7 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
                 false,
             );
             assert_eq!(
-                descriptor.extensions["fiducia.compatibility"]
-                    ["translation_must_preserve_fencing"],
+                descriptor.extensions["fiducia.compatibility"]["translation_must_preserve_fencing"],
                 true,
             );
         }
