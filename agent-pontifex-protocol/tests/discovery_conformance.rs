@@ -29,7 +29,10 @@ fn assert_public_safe(value: &Value) {
     fn visit(value: &Value, depth: usize, nodes: &mut usize) {
         assert!(depth <= 12, "discovery metadata is nested too deeply");
         *nodes += 1;
-        assert!(*nodes <= 2_048, "discovery metadata contains too many nodes");
+        assert!(
+            *nodes <= 2_048,
+            "discovery metadata contains too many nodes"
+        );
 
         match value {
             Value::Object(object) => {
@@ -89,7 +92,10 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
 
         let mut sorted = descriptor.capabilities.clone();
         sorted.sort();
-        assert_eq!(descriptor.capabilities, sorted, "{name} is not deterministic");
+        assert_eq!(
+            descriptor.capabilities, sorted,
+            "{name} is not deterministic"
+        );
 
         if *fiducia_profile {
             assert!(!descriptor.extensions.is_empty(), "{name} needs extensions");
