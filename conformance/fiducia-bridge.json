@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "protocol": "agent-pontifex.bridge",
+  "protocol_versions": {
+    "min_major": 1,
+    "max_major": 1
+  },
+  "service": "bridge",
+  "implementation": "fiducia-cloud",
+  "capabilities": [
+    "bridge.agents.register",
+    "bridge.channels.create",
+    "bridge.channels.resolve",
+    "bridge.context.read",
+    "bridge.context.write",
+    "bridge.messages.list",
+    "bridge.messages.post",
+    "bridge.presence.heartbeat",
+    "bridge.repository-path-leases.acquire",
+    "bridge.repository-path-leases.release",
+    "bridge.repository-path-leases.renew",
+    "bridge.semantic-routing",
+    "bridge.transports.http-sse",
+    "bridge.transports.tcp-jsonl",
+    "bridge.transports.websocket"
+  ],
+  "extensions": {
+    "fiducia.agent-auth": {
+      "agent_bound_mutations": true,
+      "control_plane_delegation": true
+    },
+    "fiducia.file-leases": {
+      "atomic_path_sets": true,
+      "authority": "fiducia-node",
+      "monotonic_fencing": true
+    },
+    "fiducia.persistence": {
+      "postgres": true
+    }
+  }
+}

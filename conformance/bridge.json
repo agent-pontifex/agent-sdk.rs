@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "protocol": "agent-pontifex.bridge",
+  "protocol_versions": {
+    "min_major": 1,
+    "max_major": 1
+  },
+  "service": "bridge",
+  "implementation": "agent-pontifex-community",
+  "capabilities": [
+    "bridge.agents.register",
+    "bridge.channels.create",
+    "bridge.channels.resolve",
+    "bridge.context.read",
+    "bridge.context.write",
+    "bridge.messages.list",
+    "bridge.messages.post",
+    "bridge.presence.heartbeat",
+    "bridge.repository-path-leases.acquire",
+    "bridge.repository-path-leases.release",
+    "bridge.repository-path-leases.renew",
+    "bridge.transports.websocket"
+  ],
+  "extensions": {}
+}
