@@ -154,10 +154,15 @@ impl SignedArtifactEnvelope {
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
 #[serde(rename_all = "snake_case")]
-pub enum SignatureAlgorithm {
-    Ed25519,
+pub enum DistinctAuthorityField {
+    Provider,
+    KeyId,
+    TrustDomain,
+    WorkerId,
+    JobId,
+    TaskType,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -182,19 +187,6 @@ impl TrustedArtifactKey {
     }
 }
 
-#[derive(
-    Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord,
-)]
-#[serde(rename_all = "snake_case")]
-pub enum DistinctAuthorityField {
-    Provider,
-    KeyId,
-    TrustDomain,
-    WorkerId,
-    JobId,
-    TaskType,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ArtifactTrustPolicy {
@@ -208,10 +200,7 @@ pub struct ArtifactTrustPolicy {
 }
 
 impl ArtifactTrustPolicy {
-    pub fn strict(
-        required_roles: Vec<String>,
-        keys: BTreeMap<String, TrustedArtifactKey>,
-    ) -> Self {
+    pub fn strict(required_roles: Vec<String>, keys: BTreeMap<String, TrustedArtifactKey>) -> Self {
         Self {
             schema_version: TRUST_POLICY_SCHEMA_VERSION.to_string(),
             required_roles,
@@ -228,11 +217,7 @@ impl ArtifactTrustPolicy {
                 "unsupported artifact trust-policy schema version",
             ));
         }
-        validate_unique_identifiers(
-            &self.required_roles,
-            "required_roles",
-            MAX_REQUIRED_ROLES,
-        )?;
+        validate_unique_identifiers(&self.required_roles, "required_roles", MAX_REQUIRED_ROLES)?;
         if self.keys.is_empty() || self.keys.len() > MAX_TRUSTED_KEYS {
             return Err(ValidationError::new(
                 "invalid_trust_policy",
@@ -245,8 +230,7 @@ impl ArtifactTrustPolicy {
                 "trust policy must require at least one distinct authority field",
             ));
         }
-        let distinct_fields: BTreeSet<_> =
-            self.distinct_authority_fields.iter().copied().collect();
+        let distinct_fields: BTreeSet<_> = self.distinct_authority_fields.iter().copied().collect();
         if distinct_fields.len() != self.distinct_authority_fields.len() {
             return Err(ValidationError::new(
                 "invalid_trust_policy",
@@ -337,8 +321,11 @@ pub fn validate_independent_artifact_set(
         ));
     }
 
-    let required_roles: BTreeSet<&str> =
-        trust_policy.required_roles.iter().map(String::as_str).collect();
+    let required_roles: BTreeSet<&str> = trust_policy
+        .required_roles
+        .iter()
+        .map(String::as_str)
+        .collect();
     let forbidden_keys: BTreeSet<String> = trust_policy
         .forbidden_payload_keys
         .iter()
@@ -458,9 +445,7 @@ pub fn canonical_json(value: &Value) -> Result<String, ValidationError> {
 
 fn canonicalize(value: Value) -> Value {
     match value {
-        Value::Array(values) => {
-            Value::Array(values.into_iter().map(canonicalize).collect())
-        }
+        Value::Array(values) => Value::Array(values.into_iter().map(canonicalize).collect()),
         Value::Object(object) => {
             let mut entries: Vec<_> = object.into_iter().collect();
             entries.sort_unstable_by(|left, right| left.0.cmp(&right.0));
@@ -485,10 +470,7 @@ fn sha256_hex(bytes: &[u8]) -> String {
     result
 }
 
-fn authority_field(
-    artifact: &SignedArtifactEnvelope,
-    field: DistinctAuthorityField,
-) -> &str {
+fn authority_field(artifact: &SignedArtifactEnvelope, field: DistinctAuthorityField) -> &str {
     match field {
         DistinctAuthorityField::Provider => &artifact.provider,
         DistinctAuthorityField::KeyId => &artifact.producer.key_id,
@@ -502,9 +484,7 @@ fn authority_field(
 fn validate_identifier(value: &str, label: &str) -> Result<(), ValidationError> {
     validate_bounded_text(value, label, MAX_IDENTIFIER_BYTES)?;
     if !value.bytes().all(|byte| {
-        byte.is_ascii_lowercase()
-            || byte.is_ascii_digit()
-            || matches!(byte, b'-' | b'_' | b'.')
+        byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'-' | b'_' | b'.')
     }) {
         return Err(ValidationError::new(
             "invalid_identifier",
@@ -577,7 +557,9 @@ fn validate_public_key_pem(value: &str, key_id: &str) -> Result<(), ValidationEr
     {
         return Err(ValidationError::new(
             "invalid_trust_policy",
-            format!("trusted key {key_id} must be bounded and contain canonical LF line breaks only"),
+            format!(
+                "trusted key {key_id} must be bounded and contain canonical LF line breaks only"
+            ),
         ));
     }
     if value.contains("PRIVATE KEY")
@@ -598,7 +580,10 @@ fn validate_public_key_pem(value: &str, key_id: &str) -> Result<(), ValidationEr
                 format!("trusted key {key_id} has an invalid PEM envelope"),
             )
         })?;
-    let compact: String = body.chars().filter(|character| !character.is_whitespace()).collect();
+    let compact: String = body
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect();
     if compact.is_empty()
         || !compact
             .bytes()
@@ -613,7 +598,10 @@ fn validate_public_key_pem(value: &str, key_id: &str) -> Result<(), ValidationEr
 }
 
 fn normalize_pem(value: &str) -> String {
-    value.chars().filter(|character| !character.is_whitespace()).collect()
+    value
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect()
 }
 
 fn validate_unique_identifiers(
