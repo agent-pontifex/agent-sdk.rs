@@ -3,7 +3,7 @@ use agent_pontifex_attestation::{
     ArtifactSubject, ArtifactTrustPolicy, DistinctAuthorityField, SignatureAlgorithm,
     SignedArtifactEnvelope, TrustedArtifactKey, ValidationError, ARTIFACT_SCHEMA_VERSION,
 };
-use serde_json::{json, Value};
+use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 
 const POLICY_DIGEST: &str =
@@ -304,7 +304,12 @@ fn exact_subject_policy_and_payload_hash_are_required() {
 fn secret_and_hidden_reasoning_keys_are_rejected_recursively() {
     for key in ["authorization", "private-key", "chain_of_thought"] {
         let mut artifact = envelope("chatgpt");
-        artifact.payload["nested"] = json!({key: "must not cross the artifact boundary"});
+        let mut nested = Map::new();
+        nested.insert(
+            key.to_string(),
+            Value::String("must not cross the artifact boundary".to_string()),
+        );
+        artifact.payload["nested"] = Value::Object(nested);
         artifact.payload_hash = artifact.canonical_payload_hash().unwrap();
         expect_code(
             validate_independent_artifact_set(
