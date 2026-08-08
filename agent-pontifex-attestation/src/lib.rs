@@ -30,6 +30,21 @@ const MAX_OBJECT_KEYS: usize = 128;
 const MAX_DEPTH: usize = 16;
 const MAX_REQUIRED_ROLES: usize = 32;
 const MAX_TRUSTED_KEYS: usize = 128;
+const FORBIDDEN_PAYLOAD_KEYS: &[&str] = &[
+    "authorization",
+    "cookie",
+    "credentials",
+    "password",
+    "secret",
+    "token",
+    "api_key",
+    "access_key",
+    "secret_access_key",
+    "private_key",
+    "chain_of_thought",
+    "reasoning_trace",
+    "raw_provider_response",
+];
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
@@ -154,21 +169,9 @@ impl SignedArtifactEnvelope {
     }
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
-pub enum DistinctAuthorityField {
-    Provider,
-    KeyId,
-    TrustDomain,
-    WorkerId,
-    JobId,
-    TaskType,
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct TrustedArtifactKey {
-    pub algorithm: SignatureAlgorithm,
     pub public_key_pem: String,
     pub roles: Vec<String>,
     pub provider: String,
@@ -187,16 +190,23 @@ impl TrustedArtifactKey {
     }
 }
 
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[serde(rename_all = "snake_case")]
+pub enum DistinctProducerField {
+    KeyId,
+    TrustDomain,
+    WorkerId,
+    JobId,
+    TaskType,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct ArtifactTrustPolicy {
     pub schema_version: String,
     pub required_roles: Vec<String>,
     pub keys: BTreeMap<String, TrustedArtifactKey>,
-    #[serde(default = "default_distinct_authority_fields")]
-    pub distinct_authority_fields: Vec<DistinctAuthorityField>,
-    #[serde(default = "default_forbidden_payload_keys")]
-    pub forbidden_payload_keys: Vec<String>,
+    pub distinct_producer_fields: Vec<DistinctProducerField>,
 }
 
 impl ArtifactTrustPolicy {
@@ -205,8 +215,7 @@ impl ArtifactTrustPolicy {
             schema_version: TRUST_POLICY_SCHEMA_VERSION.to_string(),
             required_roles,
             keys,
-            distinct_authority_fields: default_distinct_authority_fields(),
-            forbidden_payload_keys: default_forbidden_payload_keys(),
+            distinct_producer_fields: default_distinct_producer_fields(),
         }
     }
 
@@ -224,25 +233,20 @@ impl ArtifactTrustPolicy {
                 "trust policy must contain between 1 and 128 keys",
             ));
         }
-        if self.distinct_authority_fields.is_empty() {
+        if self.distinct_producer_fields.is_empty() {
             return Err(ValidationError::new(
                 "invalid_trust_policy",
-                "trust policy must require at least one distinct authority field",
+                "trust policy must require at least one distinct producer field",
             ));
         }
-        let distinct_fields: BTreeSet<_> = self.distinct_authority_fields.iter().copied().collect();
-        if distinct_fields.len() != self.distinct_authority_fields.len() {
+        let distinct_fields: BTreeSet<_> =
+            self.distinct_producer_fields.iter().copied().collect();
+        if distinct_fields.len() != self.distinct_producer_fields.len() {
             return Err(ValidationError::new(
                 "invalid_trust_policy",
-                "distinct authority fields must not contain duplicates",
+                "distinct producer fields must not contain duplicates",
             ));
         }
-        validate_unique_bounded_strings(
-            &self.forbidden_payload_keys,
-            "forbidden_payload_keys",
-            128,
-            128,
-        )?;
 
         let required_roles: BTreeSet<&str> =
             self.required_roles.iter().map(String::as_str).collect();
@@ -257,19 +261,12 @@ impl ArtifactTrustPolicy {
                     "distinct key IDs must not alias the same public key",
                 ));
             }
-            let key_required_roles: Vec<&str> = key
-                .roles
-                .iter()
-                .map(String::as_str)
-                .filter(|role| required_roles.contains(role))
-                .collect();
-            if key_required_roles.len() > 1 {
-                return Err(ValidationError::new(
-                    "invalid_trust_policy",
-                    "one trusted key must not authorize multiple required roles",
-                ));
-            }
-            covered_roles.extend(key_required_roles);
+            covered_roles.extend(
+                key.roles
+                    .iter()
+                    .map(String::as_str)
+                    .filter(|role| required_roles.contains(role)),
+            );
         }
         if covered_roles != required_roles {
             return Err(ValidationError::new(
@@ -326,8 +323,7 @@ pub fn validate_independent_artifact_set(
         .iter()
         .map(String::as_str)
         .collect();
-    let forbidden_keys: BTreeSet<String> = trust_policy
-        .forbidden_payload_keys
+    let forbidden_keys: BTreeSet<String> = FORBIDDEN_PAYLOAD_KEYS
         .iter()
         .map(|key| normalize_payload_key(key))
         .collect();
@@ -414,14 +410,14 @@ pub fn validate_independent_artifact_set(
         ));
     }
 
-    for field in &trust_policy.distinct_authority_fields {
+    for field in &trust_policy.distinct_producer_fields {
         let mut seen = BTreeSet::new();
         for artifact in by_role.values() {
-            let value = authority_field(artifact, *field);
+            let value = producer_field(artifact, *field);
             if !seen.insert(value) {
                 return Err(ValidationError::new(
                     "independence_violation",
-                    format!("required authority field is duplicated: {field:?}"),
+                    format!("required producer field is duplicated: {field:?}"),
                 ));
             }
         }
@@ -470,14 +466,13 @@ fn sha256_hex(bytes: &[u8]) -> String {
     result
 }
 
-fn authority_field(artifact: &SignedArtifactEnvelope, field: DistinctAuthorityField) -> &str {
+fn producer_field(artifact: &SignedArtifactEnvelope, field: DistinctProducerField) -> &str {
     match field {
-        DistinctAuthorityField::Provider => &artifact.provider,
-        DistinctAuthorityField::KeyId => &artifact.producer.key_id,
-        DistinctAuthorityField::TrustDomain => &artifact.producer.trust_domain,
-        DistinctAuthorityField::WorkerId => &artifact.producer.worker_id,
-        DistinctAuthorityField::JobId => &artifact.producer.job_id,
-        DistinctAuthorityField::TaskType => &artifact.producer.task_type,
+        DistinctProducerField::KeyId => &artifact.producer.key_id,
+        DistinctProducerField::TrustDomain => &artifact.producer.trust_domain,
+        DistinctProducerField::WorkerId => &artifact.producer.worker_id,
+        DistinctProducerField::JobId => &artifact.producer.job_id,
+        DistinctProducerField::TaskType => &artifact.producer.task_type,
     }
 }
 
@@ -733,36 +728,14 @@ fn validate_forbidden_payload_keys(
     Ok(())
 }
 
-fn default_distinct_authority_fields() -> Vec<DistinctAuthorityField> {
+fn default_distinct_producer_fields() -> Vec<DistinctProducerField> {
     vec![
-        DistinctAuthorityField::Provider,
-        DistinctAuthorityField::KeyId,
-        DistinctAuthorityField::TrustDomain,
-        DistinctAuthorityField::WorkerId,
-        DistinctAuthorityField::JobId,
-        DistinctAuthorityField::TaskType,
+        DistinctProducerField::KeyId,
+        DistinctProducerField::TrustDomain,
+        DistinctProducerField::WorkerId,
+        DistinctProducerField::JobId,
+        DistinctProducerField::TaskType,
     ]
-}
-
-fn default_forbidden_payload_keys() -> Vec<String> {
-    [
-        "authorization",
-        "cookie",
-        "credentials",
-        "password",
-        "secret",
-        "token",
-        "api_key",
-        "access_key",
-        "secret_access_key",
-        "private_key",
-        "chain_of_thought",
-        "reasoning_trace",
-        "raw_provider_response",
-    ]
-    .into_iter()
-    .map(str::to_string)
-    .collect()
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
