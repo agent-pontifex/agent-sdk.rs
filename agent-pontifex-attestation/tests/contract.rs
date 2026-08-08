@@ -1,10 +1,10 @@
 use agent_pontifex_attestation::{
     canonical_json, validate_independent_artifact_set, ArtifactExpectation, ArtifactProducer,
-    ArtifactSubject, ArtifactTrustPolicy, DistinctAuthorityField, SignatureAlgorithm,
-    SignedArtifactEnvelope, TrustedArtifactKey, ValidationError, ARTIFACT_SCHEMA_VERSION,
+    ArtifactSubject, ArtifactTrustPolicy, DistinctProducerField, SignedArtifactEnvelope,
+    TrustedArtifactKey, ValidationError, ARTIFACT_SCHEMA_VERSION,
 };
 use serde_json::{json, Map, Value};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 const POLICY_DIGEST: &str = "9999999999999999999999999999999999999999999999999999999999999999";
 const REVISION_DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -29,7 +29,6 @@ fn trusted_key(
     public_key_body: &str,
 ) -> TrustedArtifactKey {
     TrustedArtifactKey {
-        algorithm: SignatureAlgorithm::Ed25519,
         public_key_pem: public_key_pem(public_key_body),
         roles: vec![role.to_string()],
         provider: provider.to_string(),
@@ -163,6 +162,37 @@ fn envelope_validates_hash_and_emits_signature_free_canonical_bytes() {
 }
 
 #[test]
+fn trust_policy_json_matches_the_cross_language_v1_key_set() {
+    let value = serde_json::to_value(trust_policy()).unwrap();
+    let policy_keys: BTreeSet<_> = value.as_object().unwrap().keys().map(String::as_str).collect();
+    assert_eq!(
+        policy_keys,
+        BTreeSet::from([
+            "schema_version",
+            "required_roles",
+            "keys",
+            "distinct_producer_fields",
+        ])
+    );
+    let key = &value["keys"]["openai-opinion-2026-08"];
+    let key_fields: BTreeSet<_> = key.as_object().unwrap().keys().map(String::as_str).collect();
+    assert_eq!(
+        key_fields,
+        BTreeSet::from([
+            "public_key_pem",
+            "roles",
+            "provider",
+            "trust_domain",
+            "task_types",
+        ])
+    );
+
+    let mut incompatible = value;
+    incompatible["keys"]["openai-opinion-2026-08"]["algorithm"] = json!("ed25519");
+    assert!(serde_json::from_value::<ArtifactTrustPolicy>(incompatible).is_err());
+}
+
+#[test]
 fn independently_routed_required_roles_validate_as_transport_only() {
     let result = validate_independent_artifact_set(
         &[envelope("chatgpt"), envelope("claude")],
@@ -176,7 +206,7 @@ fn independently_routed_required_roles_validate_as_transport_only() {
 }
 
 #[test]
-fn duplicate_authority_fields_fail_closed() {
+fn duplicate_producer_fields_fail_closed() {
     let chatgpt = envelope("chatgpt");
     let mut claude = envelope("claude");
     claude.producer.worker_id = chatgpt.producer.worker_id.clone();
@@ -186,7 +216,7 @@ fn duplicate_authority_fields_fail_closed() {
     );
 
     let mut policy = trust_policy();
-    policy.distinct_authority_fields = vec![DistinctAuthorityField::KeyId];
+    policy.distinct_producer_fields = vec![DistinctProducerField::KeyId];
     let chatgpt = envelope("chatgpt");
     let mut claude = envelope("claude");
     claude.producer.key_id = chatgpt.producer.key_id.clone();
@@ -197,7 +227,46 @@ fn duplicate_authority_fields_fail_closed() {
 }
 
 #[test]
-fn trust_policy_rejects_key_aliases_multi_role_keys_and_private_keys() {
+fn a_multi_role_key_still_cannot_satisfy_both_required_artifacts() {
+    let shared_key_id = "shared-opinion-key";
+    let shared_domain = "shared-opinion-worker";
+    let policy = ArtifactTrustPolicy::strict(
+        vec!["chatgpt".to_string(), "claude".to_string()],
+        BTreeMap::from([(
+            shared_key_id.to_string(),
+            TrustedArtifactKey {
+                public_key_pem: public_key_pem(
+                    "MCowBQYDK2VwAyEA333333333333333333333333333333333333333=",
+                ),
+                roles: vec!["chatgpt".to_string(), "claude".to_string()],
+                provider: "synthetic".to_string(),
+                trust_domain: shared_domain.to_string(),
+                task_types: vec![
+                    "linear_opinion_chatgpt".to_string(),
+                    "linear_opinion_claude".to_string(),
+                ],
+            },
+        )]),
+    );
+    policy.validate().unwrap();
+
+    let mut chatgpt = envelope("chatgpt");
+    chatgpt.provider = "synthetic".to_string();
+    chatgpt.producer.key_id = shared_key_id.to_string();
+    chatgpt.producer.trust_domain = shared_domain.to_string();
+    let mut claude = envelope("claude");
+    claude.provider = "synthetic".to_string();
+    claude.producer.key_id = shared_key_id.to_string();
+    claude.producer.trust_domain = shared_domain.to_string();
+
+    expect_code(
+        validate_independent_artifact_set(&[chatgpt, claude], &policy, &expectation()),
+        "independence_violation",
+    );
+}
+
+#[test]
+fn trust_policy_rejects_key_aliases_and_private_keys() {
     let mut aliases = trust_policy();
     let chatgpt_pem = aliases.keys["openai-opinion-2026-08"]
         .public_key_pem
@@ -208,15 +277,6 @@ fn trust_policy_rejects_key_aliases_multi_role_keys_and_private_keys() {
         .unwrap()
         .public_key_pem = chatgpt_pem;
     expect_code(aliases.validate(), "invalid_trust_policy");
-
-    let mut multi_role = trust_policy();
-    multi_role
-        .keys
-        .get_mut("openai-opinion-2026-08")
-        .unwrap()
-        .roles
-        .push("claude".to_string());
-    expect_code(multi_role.validate(), "invalid_trust_policy");
 
     let mut private_key = trust_policy();
     private_key
