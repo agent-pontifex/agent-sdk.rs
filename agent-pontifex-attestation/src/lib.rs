@@ -239,8 +239,7 @@ impl ArtifactTrustPolicy {
                 "trust policy must require at least one distinct producer field",
             ));
         }
-        let distinct_fields: BTreeSet<_> =
-            self.distinct_producer_fields.iter().copied().collect();
+        let distinct_fields: BTreeSet<_> = self.distinct_producer_fields.iter().copied().collect();
         if distinct_fields.len() != self.distinct_producer_fields.len() {
             return Err(ValidationError::new(
                 "invalid_trust_policy",
