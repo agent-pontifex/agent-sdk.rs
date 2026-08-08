@@ -569,7 +569,17 @@ fn validate_base64url(value: &str, label: &str) -> Result<(), ValidationError> {
 }
 
 fn validate_public_key_pem(value: &str, key_id: &str) -> Result<(), ValidationError> {
-    validate_bounded_text(value, "trusted public key", MAX_PUBLIC_KEY_BYTES)?;
+    if value.is_empty()
+        || value.len() > MAX_PUBLIC_KEY_BYTES
+        || value
+            .chars()
+            .any(|character| character.is_control() && character != '\n')
+    {
+        return Err(ValidationError::new(
+            "invalid_trust_policy",
+            format!("trusted key {key_id} must be bounded and contain canonical LF line breaks only"),
+        ));
+    }
     if value.contains("PRIVATE KEY")
         || !value.starts_with("-----BEGIN PUBLIC KEY-----\n")
         || !value.ends_with("\n-----END PUBLIC KEY-----")
