@@ -6,10 +6,8 @@ use agent_pontifex_attestation::{
 use serde_json::{json, Map, Value};
 use std::collections::BTreeMap;
 
-const POLICY_DIGEST: &str =
-    "9999999999999999999999999999999999999999999999999999999999999999";
-const REVISION_DIGEST: &str =
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+const POLICY_DIGEST: &str = "9999999999999999999999999999999999999999999999999999999999999999";
+const REVISION_DIGEST: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
 fn subject() -> ArtifactSubject {
     ArtifactSubject {
@@ -148,7 +146,10 @@ fn canonical_json_recursively_sorts_objects() {
         canonical_json(&first).unwrap(),
         r#"{"a":{"x":3,"y":2},"z":1}"#
     );
-    assert_eq!(canonical_json(&first).unwrap(), canonical_json(&second).unwrap());
+    assert_eq!(
+        canonical_json(&first).unwrap(),
+        canonical_json(&second).unwrap()
+    );
 }
 
 #[test]
@@ -180,11 +181,7 @@ fn duplicate_authority_fields_fail_closed() {
     let mut claude = envelope("claude");
     claude.producer.worker_id = chatgpt.producer.worker_id.clone();
     expect_code(
-        validate_independent_artifact_set(
-            &[chatgpt, claude],
-            &trust_policy(),
-            &expectation(),
-        ),
+        validate_independent_artifact_set(&[chatgpt, claude], &trust_policy(), &expectation()),
         "independence_violation",
     );
 
@@ -271,8 +268,7 @@ fn trusted_key_metadata_anchors_provider_domain_role_and_task() {
 fn exact_subject_policy_and_payload_hash_are_required() {
     let mut wrong_subject = expectation();
     wrong_subject.subject.revision_digest =
-        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-            .to_string();
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string();
     expect_code(
         validate_independent_artifact_set(
             &[envelope("chatgpt"), envelope("claude")],
@@ -284,8 +280,7 @@ fn exact_subject_policy_and_payload_hash_are_required() {
 
     let mut wrong_policy = expectation();
     wrong_policy.policy_digest =
-        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-            .to_string();
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc".to_string();
     expect_code(
         validate_independent_artifact_set(
             &[envelope("chatgpt"), envelope("claude")],
