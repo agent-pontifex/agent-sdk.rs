@@ -164,7 +164,12 @@ fn envelope_validates_hash_and_emits_signature_free_canonical_bytes() {
 #[test]
 fn trust_policy_json_matches_the_cross_language_v1_key_set() {
     let value = serde_json::to_value(trust_policy()).unwrap();
-    let policy_keys: BTreeSet<_> = value.as_object().unwrap().keys().map(String::as_str).collect();
+    let policy_keys: BTreeSet<_> = value
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
     assert_eq!(
         policy_keys,
         BTreeSet::from([
@@ -175,7 +180,12 @@ fn trust_policy_json_matches_the_cross_language_v1_key_set() {
         ])
     );
     let key = &value["keys"]["openai-opinion-2026-08"];
-    let key_fields: BTreeSet<_> = key.as_object().unwrap().keys().map(String::as_str).collect();
+    let key_fields: BTreeSet<_> = key
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
     assert_eq!(
         key_fields,
         BTreeSet::from([
