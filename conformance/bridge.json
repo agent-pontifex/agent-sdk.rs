@@ -6,20 +6,23 @@
     "max_major": 1
   },
   "service": "bridge",
-  "implementation": "agent-pontifex-community",
+  "implementation": "agent-pontifex.ai-agent-bridge",
   "capabilities": [
-    "bridge.agents.register",
-    "bridge.channels.create",
-    "bridge.channels.resolve",
-    "bridge.context.read",
-    "bridge.context.write",
-    "bridge.messages.list",
-    "bridge.messages.post",
-    "bridge.presence.heartbeat",
-    "bridge.repository-path-leases.acquire",
-    "bridge.repository-path-leases.release",
-    "bridge.repository-path-leases.renew",
-    "bridge.transports.websocket"
+    "bridge.agents",
+    "bridge.assignment-claims",
+    "bridge.blind-workflows",
+    "bridge.channels",
+    "bridge.context",
+    "bridge.file-leases",
+    "bridge.messages",
+    "bridge.policy-admission",
+    "bridge.presence",
+    "bridge.semantic-resolution",
+    "bridge.transport.http",
+    "bridge.transport.sse",
+    "bridge.transport.tcp",
+    "bridge.workflow-policy",
+    "bridge.workflows"
   ],
   "extensions": {}
 }

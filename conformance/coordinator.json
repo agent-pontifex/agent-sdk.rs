@@ -6,7 +6,7 @@
     "max_major": 1
   },
   "service": "coordinator",
-  "implementation": "agent-pontifex-community",
+  "implementation": "agent-pontifex.ai-agent-coordinator",
   "capabilities": [
     "coordinator.jobs.cancel",
     "coordinator.jobs.claim",

@@ -2,3 +2,16 @@ tmp
 temp
 tmp/worktrees
 temp/worktrees
+target/
+.vendor/.zed/
+.zed/
+.zed-pack/
+
+# Plaintext environment material is always local and disposable. Repositories
+# may track only SOPS ciphertext matching env/enc/*.env.enc.
+.env
+.env.*
+!.env.example
+env/dec/
+env/enc/*
+!env/enc/*.env.enc

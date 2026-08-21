@@ -17,3 +17,9 @@ and recursively rejects credential-shaped metadata.
 Servers may advertise a subset or superset of these optional capabilities, but
 must not reinterpret an existing capability or weaken the portable contract.
 Breaking field or semantic changes require a new protocol major version.
+
+The community fixtures mirror the capabilities actually emitted by the
+canonical bridge and coordinator at the pinned SDK revision; they must not
+advertise transports or operations that those services do not implement. The
+cross-platform authority and credential boundaries are defined separately in
+[`platform-interop.json`](platform-interop.json).

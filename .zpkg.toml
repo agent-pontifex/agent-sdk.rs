@@ -1,0 +1,37 @@
+[package]
+org = "agent-pontifex"
+name = "agent-sdk"
+version = "0.1.0"
+description = "Vendor-neutral Agent Pontifex protocol contracts and credential-safe Rust clients"
+license = "MIT"
+keywords = ["agents", "protocol", "sdk", "coordination", "rust"]
+language = "rust"
+
+[package.repository]
+vcs = "git"
+url = "https://github.com/agent-pontifex/agent-sdk.rs"
+
+[install]
+dir = ".vendor/.zed"
+
+[publish]
+include_readme = true
+tag_format = "v{version}"
+smoke_test = "cargo test --manifest-path \"$ZED_PKG_TEST_TARGET/Cargo.toml\" --workspace"
+exclude = [".env", ".env.*", "env/**", ".zed/**", ".zed-pack/**", ".vendor/.zed/**", "target/**", "tmp/**", "**/*.log", ".DS_Store"]
+
+[targets.repository]
+dir = "."
+
+[targets.protocol]
+dir = "agent-pontifex-protocol"
+name = "agent-pontifex-protocol"
+adapter = "rust"
+
+[targets.rust]
+dir = "agent-pontifex-sdk"
+name = "agent-pontifex-sdk"
+adapter = "rust"
+
+[scripts]
+test = "cargo test --workspace"
