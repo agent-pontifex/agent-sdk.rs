@@ -2,6 +2,10 @@ tmp
 temp
 tmp/worktrees
 temp/worktrees
+target/
+.vendor/.zed/
+.zed/
+.zed-pack/
 
 # --- environment / secrets (sops + age) -------------------------------------
 # Only env/enc/*.env.enc is tracked. Every plaintext form stays out of git;
@@ -11,6 +15,8 @@ temp/worktrees
 *.env
 **/*.env
 env/dec/
+env/enc/*
+!env/enc/*.env.enc
 !.env.example
 
 # age private keys — never commit these.
