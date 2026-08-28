@@ -7,11 +7,20 @@ target/
 .zed/
 .zed-pack/
 
-# Plaintext environment material is always local and disposable. Repositories
-# may track only SOPS ciphertext matching env/enc/*.env.enc.
+# --- environment / secrets (sops + age) -------------------------------------
+# Only env/enc/*.env.enc is tracked. Every plaintext form stays out of git;
+# `just env-check` enforces it. See env/README.md.
 .env
 .env.*
-!.env.example
+*.env
+**/*.env
 env/dec/
 env/enc/*
 !env/enc/*.env.enc
+!.env.example
+
+# age private keys — never commit these.
+*.agekey
+*.age-key
+keys.txt
+sops-private*.txt
