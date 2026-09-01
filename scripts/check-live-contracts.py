@@ -31,6 +31,12 @@ PAYLOAD_KINDS = (
     "tracker_update",
     "error",
 )
+EXPECTED_PROVIDER_MODELS = {
+    ("openai", "gpt-5.6-sol"),
+    ("anthropic", "claude-opus-5"),
+    ("google", "gemini-3.1-pro-preview"),
+    ("xai", "grok-4.6"),
+}
 FORBIDDEN_FIELDS = {
     "chain_of_thought",
     "hidden_reasoning",
@@ -148,11 +154,18 @@ def main() -> int:
 
     if session.get("schema_version") != 1 or session.get("protocol") != PROTOCOL:
         fail("session fixture has the wrong protocol identity")
-    providers = {
-        participant["identity"]["provider"] for participant in session["participants"]
+    provider_models = {
+        (
+            participant["identity"]["provider"],
+            participant["identity"]["model"],
+        )
+        for participant in session["participants"]
     }
-    if providers != {"openai", "anthropic", "xai"}:
-        fail(f"session fixture must cover OpenAI, Anthropic, and xAI: {providers}")
+    if provider_models != EXPECTED_PROVIDER_MODELS:
+        fail(
+            "session fixture must cover the four resolved provider/model identities: "
+            f"{sorted(provider_models)}"
+        )
     participant_ids = [
         participant["identity"]["participant_id"]
         for participant in session["participants"]
