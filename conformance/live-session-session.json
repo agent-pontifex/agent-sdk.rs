@@ -3,7 +3,7 @@
   "protocol": "agent-pontifex.live",
   "session_id": "session-den-1873-live-bridge",
   "channel": "workflow-den-1873-live-bridge",
-  "title": "Agent Pontifex live bridge review",
+  "title": "Agent Pontifex four-provider live bridge review",
   "state": "active",
   "created_by": "chatgpt",
   "created_at": "2026-09-01T16:00:00Z",
@@ -12,10 +12,10 @@
       "identity": {
         "participant_id": "chatgpt",
         "provider": "openai",
-        "model": "gpt",
+        "model": "gpt-5.6-sol",
         "runtime": "openai-responses-worker"
       },
-      "display_name": "ChatGPT",
+      "display_name": "ChatGPT Sol",
       "role": "moderator",
       "capabilities": [
         "agent.chat",
@@ -28,10 +28,10 @@
       "identity": {
         "participant_id": "claude",
         "provider": "anthropic",
-        "model": "claude",
+        "model": "claude-opus-5",
         "runtime": "anthropic-messages-worker"
       },
-      "display_name": "Claude",
+      "display_name": "Claude Opus 5",
       "role": "member",
       "capabilities": [
         "agent.chat",
@@ -42,12 +42,12 @@
     },
     {
       "identity": {
-        "participant_id": "grok",
-        "provider": "xai",
-        "model": "grok",
-        "runtime": "openai-compatible-worker"
+        "participant_id": "gemini",
+        "provider": "google",
+        "model": "gemini-3.1-pro-preview",
+        "runtime": "gemini-generate-content-worker"
       },
-      "display_name": "Grok",
+      "display_name": "Gemini Pro",
       "role": "member",
       "capabilities": [
         "agent.chat",
@@ -55,6 +55,22 @@
         "agent.review"
       ],
       "joined_at": "2026-09-01T16:00:02Z"
+    },
+    {
+      "identity": {
+        "participant_id": "grok",
+        "provider": "xai",
+        "model": "grok-4.6",
+        "runtime": "xai-chat-completions-worker"
+      },
+      "display_name": "Grok 4.6",
+      "role": "member",
+      "capabilities": [
+        "agent.chat",
+        "agent.research",
+        "agent.review"
+      ],
+      "joined_at": "2026-09-01T16:00:03Z"
     }
   ],
   "tracker_links": [
