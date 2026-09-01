@@ -137,6 +137,15 @@ def main() -> int:
         if not re.search(rf"\b{rust_variant}\s*\{{", rust_code):
             fail(f"Rust is missing payload variant {rust_variant}")
 
+    for frame_name in ("client_frame", "server_frame"):
+        for variant in schema["$defs"][frame_name]["oneOf"]:
+            properties = variant["properties"]
+            required = variant["required"]
+            if "type" not in properties or "type" not in required or "kind" in properties:
+                fail(f"{frame_name} must use the `type` discriminator")
+    if "client_event_id" in schema["$defs"]["live_envelope"]["properties"]:
+        fail("server envelopes must not retain the client-only event identifier")
+
     if session.get("schema_version") != 1 or session.get("protocol") != PROTOCOL:
         fail("session fixture has the wrong protocol identity")
     providers = {
