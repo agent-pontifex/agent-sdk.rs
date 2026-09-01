@@ -1078,16 +1078,14 @@ mod tests {
 
     #[test]
     fn conformance_fixtures_validate_and_omit_hidden_reasoning_fields() {
-        let session: LiveSession = serde_json::from_str(include_str!(
-            "../../conformance/live-session-session.json"
-        ))
-        .unwrap();
+        let session: LiveSession =
+            serde_json::from_str(include_str!("../../conformance/live-session-session.json"))
+                .unwrap();
         session.validate().unwrap();
 
-        let envelope: LiveEnvelope = serde_json::from_str(include_str!(
-            "../../conformance/live-session-envelope.json"
-        ))
-        .unwrap();
+        let envelope: LiveEnvelope =
+            serde_json::from_str(include_str!("../../conformance/live-session-envelope.json"))
+                .unwrap();
         envelope.validate().unwrap();
 
         let encoded = serde_json::to_string(&envelope).unwrap();
