@@ -1,0 +1,309 @@
+syntax = "proto3";
+
+package agent_pontifex.live.v1;
+
+import "google/protobuf/struct.proto";
+
+// Observable collaboration records only. Hidden chain-of-thought is outside
+// this protocol and must never be requested as an interoperability requirement.
+
+message ProviderIdentity {
+  string participant_id = 1;
+  string provider = 2;
+  string model = 3;
+  optional string runtime = 4;
+  optional string instance_id = 5;
+}
+
+enum ParticipantRole {
+  PARTICIPANT_ROLE_UNSPECIFIED = 0;
+  PARTICIPANT_ROLE_MEMBER = 1;
+  PARTICIPANT_ROLE_MODERATOR = 2;
+  PARTICIPANT_ROLE_FINALIZER = 3;
+  PARTICIPANT_ROLE_OBSERVER = 4;
+}
+
+message Participant {
+  ProviderIdentity identity = 1;
+  string display_name = 2;
+  ParticipantRole role = 3;
+  repeated string capabilities = 4;
+  string joined_at = 5;
+}
+
+message TrackerLink {
+  string kind = 1;
+  string reference = 2;
+  string url = 3;
+  optional string relation = 4;
+}
+
+message EvidenceRef {
+  string kind = 1;
+  string uri = 2;
+  optional string digest = 3;
+  optional string summary = 4;
+}
+
+enum SessionState {
+  SESSION_STATE_UNSPECIFIED = 0;
+  SESSION_STATE_ACTIVE = 1;
+  SESSION_STATE_CLOSING = 2;
+  SESSION_STATE_CLOSED = 3;
+}
+
+message LiveSession {
+  uint32 schema_version = 1;
+  string protocol = 2;
+  string session_id = 3;
+  string channel = 4;
+  string title = 5;
+  SessionState state = 6;
+  string created_by = 7;
+  string created_at = 8;
+  repeated Participant participants = 9;
+  repeated TrackerLink tracker_links = 10;
+  uint64 high_water_seq = 11;
+  google.protobuf.Struct extensions = 12;
+}
+
+enum DecisionOutcome {
+  DECISION_OUTCOME_UNSPECIFIED = 0;
+  DECISION_OUTCOME_ACCEPTED = 1;
+  DECISION_OUTCOME_REJECTED = 2;
+  DECISION_OUTCOME_DEFERRED = 3;
+  DECISION_OUTCOME_SUPERSEDED = 4;
+}
+
+enum ToolOutcome {
+  TOOL_OUTCOME_UNSPECIFIED = 0;
+  TOOL_OUTCOME_SUCCEEDED = 1;
+  TOOL_OUTCOME_FAILED = 2;
+  TOOL_OUTCOME_DENIED = 3;
+  TOOL_OUTCOME_CANCELLED = 4;
+}
+
+enum ApprovalOutcome {
+  APPROVAL_OUTCOME_UNSPECIFIED = 0;
+  APPROVAL_OUTCOME_APPROVED = 1;
+  APPROVAL_OUTCOME_DENIED = 2;
+  APPROVAL_OUTCOME_EXPIRED = 3;
+  APPROVAL_OUTCOME_REVOKED = 4;
+}
+
+enum WorkState {
+  WORK_STATE_UNSPECIFIED = 0;
+  WORK_STATE_PLANNED = 1;
+  WORK_STATE_CLAIMED = 2;
+  WORK_STATE_RUNNING = 3;
+  WORK_STATE_BLOCKED = 4;
+  WORK_STATE_AWAITING_REVIEW = 5;
+  WORK_STATE_COMPLETED = 6;
+  WORK_STATE_FAILED = 7;
+  WORK_STATE_CANCELLED = 8;
+}
+
+message MessagePayload {
+  string content = 1;
+  string content_type = 2;
+}
+
+message ProposalPayload {
+  string proposal_id = 1;
+  string summary = 2;
+  optional string details = 3;
+}
+
+message DecisionPayload {
+  string proposal_id = 1;
+  DecisionOutcome outcome = 2;
+  optional string decision_basis = 3;
+}
+
+message ToolRequestPayload {
+  string request_id = 1;
+  string tool = 2;
+  string action = 3;
+  string capability = 4;
+  google.protobuf.Value arguments = 5;
+  bool requires_approval = 6;
+}
+
+message ToolResultPayload {
+  string request_id = 1;
+  ToolOutcome outcome = 2;
+  google.protobuf.Value result = 3;
+  optional string error = 4;
+  repeated EvidenceRef evidence = 5;
+}
+
+message ApprovalRequestPayload {
+  string approval_id = 1;
+  string subject = 2;
+  repeated string requested_capabilities = 3;
+  string expires_at = 4;
+}
+
+message ApprovalDecisionPayload {
+  string approval_id = 1;
+  ApprovalOutcome outcome = 2;
+  string decided_by = 3;
+  optional string decision_basis = 4;
+}
+
+message WorkStatusPayload {
+  string work_id = 1;
+  WorkState state = 2;
+  string summary = 3;
+  optional uint32 progress_bps = 4;
+  repeated EvidenceRef evidence = 5;
+}
+
+message HandoffPayload {
+  string work_id = 1;
+  string to = 2;
+  string summary = 3;
+  repeated string context_refs = 4;
+}
+
+message TrackerUpdatePayload {
+  TrackerLink link = 1;
+  string summary = 2;
+}
+
+message ErrorPayload {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+}
+
+message LivePayload {
+  oneof value {
+    MessagePayload message = 1;
+    ProposalPayload proposal = 2;
+    DecisionPayload decision = 3;
+    ToolRequestPayload tool_request = 4;
+    ToolResultPayload tool_result = 5;
+    ApprovalRequestPayload approval_request = 6;
+    ApprovalDecisionPayload approval_decision = 7;
+    WorkStatusPayload work_status = 8;
+    HandoffPayload handoff = 9;
+    TrackerUpdatePayload tracker_update = 10;
+    ErrorPayload error = 11;
+  }
+}
+
+message PublishEvent {
+  string client_event_id = 1;
+  string session_id = 2;
+  string channel = 3;
+  string sender = 4;
+  repeated string recipients = 5;
+  optional string correlation_id = 6;
+  optional string causation_id = 7;
+  string idempotency_key = 8;
+  LivePayload payload = 9;
+  google.protobuf.Struct extensions = 10;
+}
+
+message LiveEnvelope {
+  uint32 schema_version = 1;
+  string protocol = 2;
+  string event_id = 3;
+  string session_id = 4;
+  string channel = 5;
+  uint64 seq = 6;
+  string sender = 7;
+  repeated string recipients = 8;
+  optional string correlation_id = 9;
+  optional string causation_id = 10;
+  string idempotency_key = 11;
+  string created_at = 12;
+  LivePayload payload = 13;
+  google.protobuf.Struct extensions = 14;
+}
+
+message ResumeCursor {
+  uint64 after_seq = 1;
+  optional string last_event_id = 2;
+}
+
+message HelloFrame {
+  ProviderIdentity participant = 1;
+  string session_id = 2;
+  repeated string capabilities = 3;
+  optional ResumeCursor resume = 4;
+}
+
+message PublishFrame {
+  PublishEvent event = 1;
+}
+
+message AckFrame {
+  string session_id = 1;
+  uint64 through_seq = 2;
+}
+
+message PingFrame {
+  string nonce = 1;
+}
+
+message LeaveFrame {
+  string session_id = 1;
+  string participant_id = 2;
+}
+
+message ClientFrame {
+  oneof value {
+    HelloFrame hello = 1;
+    PublishFrame publish = 2;
+    AckFrame ack = 3;
+    PingFrame ping = 4;
+    LeaveFrame leave = 5;
+  }
+}
+
+message WelcomeFrame {
+  LiveSession session = 1;
+  uint64 replay_from_seq = 2;
+}
+
+message EventFrame {
+  LiveEnvelope event = 1;
+}
+
+message AcceptedFrame {
+  string client_event_id = 1;
+  string event_id = 2;
+  uint64 seq = 3;
+  bool replayed = 4;
+}
+
+message LaggedFrame {
+  string session_id = 1;
+  uint64 expected_after_seq = 2;
+  uint64 high_water_seq = 3;
+  string recovery_uri = 4;
+}
+
+message PongFrame {
+  string nonce = 1;
+  string at = 2;
+}
+
+message ServerErrorFrame {
+  string code = 1;
+  string message = 2;
+  bool retryable = 3;
+}
+
+message ServerFrame {
+  oneof value {
+    WelcomeFrame welcome = 1;
+    EventFrame event = 2;
+    AcceptedFrame accepted = 3;
+    LaggedFrame lagged = 4;
+    PongFrame pong = 5;
+    ServerErrorFrame error = 6;
+  }
+}

@@ -28,6 +28,11 @@ dir = "agent-pontifex-protocol"
 name = "agent-pontifex-protocol"
 adapter = "rust"
 
+[targets.live-protocol]
+dir = "agent-pontifex-live-protocol"
+name = "agent-pontifex-live-protocol"
+adapter = "rust"
+
 [targets.rust]
 dir = "agent-pontifex-sdk"
 name = "agent-pontifex-sdk"

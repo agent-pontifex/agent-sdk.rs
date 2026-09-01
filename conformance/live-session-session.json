@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "protocol": "agent-pontifex.live",
+  "session_id": "session-den-1873-live-bridge",
+  "channel": "workflow-den-1873-live-bridge",
+  "title": "Agent Pontifex live bridge review",
+  "state": "active",
+  "created_by": "chatgpt",
+  "created_at": "2026-09-01T16:00:00Z",
+  "participants": [
+    {
+      "identity": {
+        "participant_id": "chatgpt",
+        "provider": "openai",
+        "model": "gpt",
+        "runtime": "openai-responses-worker"
+      },
+      "display_name": "ChatGPT",
+      "role": "moderator",
+      "capabilities": [
+        "agent.chat",
+        "agent.plan",
+        "agent.review"
+      ],
+      "joined_at": "2026-09-01T16:00:00Z"
+    },
+    {
+      "identity": {
+        "participant_id": "claude",
+        "provider": "anthropic",
+        "model": "claude",
+        "runtime": "anthropic-messages-worker"
+      },
+      "display_name": "Claude",
+      "role": "member",
+      "capabilities": [
+        "agent.chat",
+        "agent.code",
+        "agent.review"
+      ],
+      "joined_at": "2026-09-01T16:00:01Z"
+    },
+    {
+      "identity": {
+        "participant_id": "grok",
+        "provider": "xai",
+        "model": "grok",
+        "runtime": "openai-compatible-worker"
+      },
+      "display_name": "Grok",
+      "role": "member",
+      "capabilities": [
+        "agent.chat",
+        "agent.research",
+        "agent.review"
+      ],
+      "joined_at": "2026-09-01T16:00:02Z"
+    }
+  ],
+  "tracker_links": [
+    {
+      "kind": "linear.issue",
+      "reference": "DEN-1873",
+      "url": "https://linear.app/denman/issue/DEN-1873/agent-pontifex-live-session-protocol",
+      "relation": "tracks"
+    },
+    {
+      "kind": "github.repository",
+      "reference": "agent-pontifex/agent-sdk.rs",
+      "url": "https://github.com/agent-pontifex/agent-sdk.rs",
+      "relation": "implements"
+    }
+  ],
+  "high_water_seq": 0,
+  "extensions": {}
+}
