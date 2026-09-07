@@ -1,0 +1,46 @@
+{
+  "authorityInputs": {
+    "jsonSchema": {
+      "gitBlobSha": "e6f8d248202fe05510ffe7d1754b14642edc1763",
+      "path": "contracts/live-session/live-session.schema.json",
+      "role": "human-authored-peer-authority"
+    },
+    "typeSpec": {
+      "gitBlobSha": "50802c3c4b8d6b2898c60a066304231c43d608a9",
+      "path": "contracts/live-session/live-session.tsp",
+      "role": "human-authored-peer-authority"
+    }
+  },
+  "formatVersion": 1,
+  "hiddenReasoningExcluded": true,
+  "output": {
+    "gitBlobSha": "6aad48217d7c90041157564a52aded398fa04d2f",
+    "methods": [
+      {
+        "input": "ClientFrame",
+        "jsonSchemaDefs": [
+          "client_frame",
+          "server_frame"
+        ],
+        "operation": "connect",
+        "output": "ServerFrame",
+        "rpc": "Connect",
+        "stream": "duplex"
+      }
+    ],
+    "package": "agent_pontifex.live.v1",
+    "path": "contracts/live-session/live-session.proto",
+    "service": "LiveSessionService"
+  },
+  "projectionInputs": {
+    "grpcProjection": {
+      "path": "contracts/live-session/grpc-projection.json",
+      "sha256": "f8e4969ce022eff58f7048b5f34c44b9878d32a91bdf9be8132971dca3576435"
+    },
+    "protobufMessages": {
+      "gitBlobShaBeforeServiceProjection": "fc786a1ddd24323c82e1c055ebf92c8275f64de0",
+      "path": "contracts/live-session/live-session.proto"
+    }
+  },
+  "semanticValidatorRequiredAfterDecode": true
+}
