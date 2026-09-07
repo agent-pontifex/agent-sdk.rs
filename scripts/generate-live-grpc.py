@@ -149,8 +149,26 @@ def validate_lock(proto: str, config: dict[str, Any], lock: dict[str, Any]) -> N
     locked_services = lock.get("services")
     if not isinstance(locked_services, dict):
         raise ProjectionError("protobuf.lock.json must lock services")
-    if locked_services.get(service) != config.get("methods"):
-        raise ProjectionError(f"{service} service lock does not match projection config")
+    locked_methods = locked_services.get(service)
+    configured_methods = config.get("methods")
+    if not isinstance(locked_methods, list) or not isinstance(configured_methods, list):
+        raise ProjectionError(f"{service} service lock must contain a method list")
+    wire_keys = ("rpc", "input", "output", "stream", "operation")
+    locked_wire = [
+        {key: method.get(key) for key in wire_keys}
+        for method in locked_methods
+        if isinstance(method, dict)
+    ]
+    configured_wire = [
+        {key: method.get(key) for key in wire_keys}
+        for method in configured_methods
+        if isinstance(method, dict)
+    ]
+    if locked_wire != configured_wire or len(locked_wire) != len(locked_methods):
+        raise ProjectionError(
+            f"{service} service lock {locked_wire!r} does not match "
+            f"projection config {configured_wire!r}"
+        )
 
 
 def build_manifest(
