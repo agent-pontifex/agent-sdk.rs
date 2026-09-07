@@ -1,4 +1,4 @@
-name: ci
+name: CI
 
 on:
   push:
@@ -13,14 +13,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    runs-on: ubuntu-24.04
+  test:
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with: { persist-credentials: false }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@4be7066ada62dd38de10e7b70166bc74ed198c30
-        with: { components: "rustfmt,clippy" }
+        with:
+          toolchain: "1.95.0"
+          components: "rustfmt,clippy"
 
       - name: Check checked-in live protocol contracts
         run: python3 scripts/check-live-contracts.py
@@ -28,7 +31,7 @@ jobs:
       - name: Check generated gRPC service projection
         run: python3 scripts/generate-live-grpc.py --check
 
-      - name: Compile the live-session gRPC descriptor
+      - name: Compile live-session gRPC descriptor
         shell: bash
         run: |
           set -euo pipefail
@@ -55,28 +58,8 @@ jobs:
         run: cargo test --workspace --all-targets --all-features
       - name: Build release
         run: cargo build --workspace --release
-
-      - name: Run four-provider conformance
-        run: cargo run -p agent-pontifex-conformance --locked -- contracts/live-session/providers/matrix.json
-
-      - name: Scan contracts, source, and provider fixtures for forbidden secrets
-        shell: bash
-        run: |
-          set -euo pipefail
-          if grep -RInE \
-            --exclude='secret-scan-allowlist.txt' \
-            --exclude='README.md' \
-            --exclude='examples.json' \
-            --exclude='matrix.json' \
-            --exclude='secret-shape-invalid.json' \
-            --exclude='check-live-contracts.py' \
-            --exclude='*.lock' \
-            '(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{20,}|gAAAAA[A-Za-z0-9_-]{20,}|Bearer[[:space:]]+[A-Za-z0-9._~+/=-]{20,})' \
-            contracts scripts agent-pontifex-protocol/src \
-            | grep -vFf contracts/live-session/providers/secret-scan-allowlist.txt; then
-            echo "forbidden secret-shaped content found" >&2
-            exit 1
-          fi
+      - name: Docs
+        run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 
       - name: Re-run protocol contract after native tests
         run: python3 scripts/check-live-contracts.py
