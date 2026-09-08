@@ -307,3 +307,9 @@ message ServerFrame {
     ServerErrorFrame error = 6;
   }
 }
+
+// BEGIN GENERATED GRPC SERVICE — scripts/generate-live-grpc.py
+service LiveSessionService {
+  rpc Connect(stream ClientFrame) returns (stream ServerFrame);
+}
+// END GENERATED GRPC SERVICE

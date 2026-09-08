@@ -339,3 +339,12 @@ union ServerFrame {
   PongFrame,
   ServerErrorFrame,
 }
+
+/**
+ * Logical transport operation projected into the gRPC service. The streaming
+ * mode is transport-specific metadata in grpc-projection.json; the peer
+ * authorities continue to own the ClientFrame and ServerFrame shapes.
+ */
+interface LiveSessionTransport {
+  connect(frame: ClientFrame): ServerFrame;
+}
