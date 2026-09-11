@@ -3,4 +3,5 @@ resolver = "2"
 members = [
     "agent-pontifex-protocol",
     "agent-pontifex-sdk",
+    "agent-pontifex-live-protocol",
 ]

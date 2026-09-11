@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "protocol": "agent-pontifex.live",
+  "event_id": "event-0000000001",
+  "session_id": "session-den-1873-live-bridge",
+  "channel": "workflow-den-1873-live-bridge",
+  "seq": 1,
+  "sender": "claude",
+  "recipients": [
+    "chatgpt",
+    "grok"
+  ],
+  "correlation_id": "review-round-1",
+  "idempotency_key": "claude-review-round-0001",
+  "created_at": "2026-09-01T16:02:00Z",
+  "payload": {
+    "kind": "proposal",
+    "proposal_id": "proposal-live-transport-1",
+    "summary": "Use the ordered Agent Pontifex channel as the live session log and keep GitHub and Linear as durable delivery ledgers.",
+    "details": "Publish over HTTP or bidirectional TCP, subscribe over SSE or TCP, acknowledge server sequences, and reconcile any lag from the history endpoint before a finalizer performs a side effect."
+  },
+  "extensions": {}
+}

@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "messages": {
+    "ClientFrame": {
+      "ack": 3,
+      "hello": 1,
+      "leave": 5,
+      "ping": 4,
+      "publish": 2
+    },
+    "ServerFrame": {
+      "accepted": 3,
+      "error": 6,
+      "event": 2,
+      "lagged": 4,
+      "pong": 5,
+      "welcome": 1
+    }
+  },
+  "rule": "Append-only field numbers. Never reuse; reserve removed names and numbers.",
+  "services": {
+    "LiveSessionService": [
+      {
+        "input": "ClientFrame",
+        "jsonSchemaDefs": [
+          "client_frame",
+          "server_frame"
+        ],
+        "operation": "connect",
+        "output": "ServerFrame",
+        "rpc": "Connect",
+        "stream": "duplex"
+      }
+    ]
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "protocol_authority": "agent-pontifex/agent-sdk.rs",
+  "fiducia": {
+    "role": "distributed repository-write authority",
+    "repository_identity": "github-owner/repository",
+    "atomic_path_union": true,
+    "required_authority_fields": [
+      "repository",
+      "paths",
+      "agent_key",
+      "fencing_token",
+      "lease_expires_ms"
+    ],
+    "fencing_token_minimum": 1,
+    "fencing_token_maximum": 9007199254740991,
+    "renewal_requires_exact_path_union": true,
+    "stale_holder_must_fail_at_side_effect": true
+  },
+  "shared_auth": {
+    "role": "human operator identity authority",
+    "does_not_authorize": [
+      "agent workload identity",
+      "product-local role or tenant policy",
+      "repository mutation fencing"
+    ],
+    "jwt_verification_requires": [
+      "pinned issuer",
+      "exact audience",
+      "trusted JWKS"
+    ],
+    "introspection_service_credential_is_separate": true,
+    "forward_raw_caller_bearer": false
+  },
+  "zed": {
+    "role": "package and artifact resolution",
+    "manifest": ".zpkg.toml",
+    "package_identity": "agent-pontifex/agent-sdk",
+    "source_revision_must_be_immutable": true
+  },
+  "secrets": {
+    "tracked_ciphertext": "env/enc/*.env.enc",
+    "decrypted_plaintext": "env/dec/*.env",
+    "encryption": "sops",
+    "materialization": [
+      "just",
+      "nix",
+      "runtime injection"
+    ],
+    "plaintext_must_be_untracked": true,
+    "ciphertext_must_not_ship_in_artifacts": true
+  }
+}

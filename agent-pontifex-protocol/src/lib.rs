@@ -18,6 +18,14 @@ pub const CURRENT_PROTOCOL_MAJOR: u16 = 1;
 pub const BRIDGE_PROTOCOL_ID: &str = "agent-pontifex.bridge";
 pub const COORDINATOR_PROTOCOL_ID: &str = "agent-pontifex.coordinator";
 pub const DISCOVERY_PATH_SEGMENTS: [&str; 2] = [".well-known", "agent-pontifex"];
+/// Largest integer that every supported JSON consumer can represent exactly.
+/// Fencing tokens cross browser and polyglot boundaries and must remain in this
+/// range rather than silently rounding stale authority into current authority.
+pub const MAX_SAFE_FENCING_TOKEN: u64 = 9_007_199_254_740_991;
+/// Fiducia extension advertising its repository-path lease authority.
+pub const FIDUCIA_FILE_LEASES_EXTENSION_ID: &str = "fiducia.file-leases";
+/// Fiducia extension advertising distributed coordination authority.
+pub const FIDUCIA_AUTHORITY_EXTENSION_ID: &str = "fiducia.authority";
 pub type Timestamp = String;
 
 const MAX_CAPABILITIES: usize = 256;
@@ -212,6 +220,20 @@ fn validate_identifier(value: &str, field: &str) -> Result<(), ValidationError> 
         return Err(ValidationError::new(format!(
             "{field} must use lowercase ASCII identifier characters"
         )));
+    }
+    Ok(())
+}
+
+/// Validate a positive, JSON-safe distributed fencing token.
+///
+/// Agent Pontifex transports this authority value but does not mint it. A
+/// downstream authority such as Fiducia owns issuance, renewal, and current-
+/// holder checks at the irreversible side-effect boundary.
+pub fn validate_fencing_token(token: u64) -> Result<(), ValidationError> {
+    if token == 0 || token > MAX_SAFE_FENCING_TOKEN {
+        return Err(ValidationError::new(
+            "fencing token must be a positive JSON-safe integer",
+        ));
     }
     Ok(())
 }
@@ -674,5 +696,13 @@ mod tests {
             serde_json::from_value::<coordinator::CreateJobRequest>(encoded).unwrap(),
             request
         );
+    }
+
+    #[test]
+    fn fencing_tokens_are_positive_and_json_safe() {
+        assert!(validate_fencing_token(1).is_ok());
+        assert!(validate_fencing_token(MAX_SAFE_FENCING_TOKEN).is_ok());
+        assert!(validate_fencing_token(0).is_err());
+        assert!(validate_fencing_token(MAX_SAFE_FENCING_TOKEN + 1).is_err());
     }
 }

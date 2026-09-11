@@ -113,6 +113,31 @@ fn discovery_profiles_negotiate_and_remain_public_safe() {
             );
         }
 
+        if *name == "bridge.json" {
+            assert_eq!(descriptor.implementation, "agent-pontifex.ai-agent-bridge");
+            for transport in [
+                "bridge.transport.http",
+                "bridge.transport.sse",
+                "bridge.transport.tcp",
+            ] {
+                assert!(descriptor
+                    .capabilities
+                    .iter()
+                    .any(|capability| capability == transport));
+            }
+            assert!(descriptor
+                .capabilities
+                .iter()
+                .all(|capability| !capability.contains("websocket")));
+        }
+
+        if *name == "coordinator.json" {
+            assert_eq!(
+                descriptor.implementation,
+                "agent-pontifex.ai-agent-coordinator"
+            );
+        }
+
         if *name == "fiducia-coordinator.json" {
             assert!(
                 descriptor

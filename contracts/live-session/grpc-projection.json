@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "methods": [
+    {
+      "input": "ClientFrame",
+      "jsonSchemaDefs": [
+        "client_frame",
+        "server_frame"
+      ],
+      "operation": "connect",
+      "output": "ServerFrame",
+      "rpc": "Connect",
+      "stream": "duplex"
+    }
+  ],
+  "package": "agent_pontifex.live.v1",
+  "service": "LiveSessionService",
+  "sourceInterface": "LiveSessionTransport"
+}
