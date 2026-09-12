@@ -1,32 +1,77 @@
+import "@typespec/json-schema";
+
+using TypeSpec.JsonSchema;
+
 /**
  * Agent Pontifex Live Session v1.
  *
  * This contract contains only externally observable collaboration records. It
  * never asks a model or adapter to disclose hidden chain-of-thought.
+ *
+ * Wire property names are snake_case. Declaration names are PascalCase; they
+ * are not wire names. contracts/live-session/tjsv-declaration-mapping.json
+ * pairs each declaration with its snake_case JSON Schema `$defs` peer.
  */
 namespace AgentPontifex.Live.V1;
 
-alias Timestamp = string;
-alias JsonValue = unknown;
-alias Extensions = Record<JsonValue>;
-
+/** Opaque identifier restricted to URL- and log-safe ASCII. */
 @minLength(1)
 @maxLength(256)
 @pattern("^[A-Za-z0-9_.:/@+\\-]+$")
 scalar Token extends string;
+
+/** Token bounded to 128 bytes: provider namespaces, content types, relations. */
+@minLength(1)
+@maxLength(128)
+@pattern("^[A-Za-z0-9_.:/@+\\-]+$")
+scalar ShortToken extends string;
+
+/** Namespaced identifier such as `agent.review`, `github.commit`, or `bridge.lagged`. */
+@minLength(3)
+@maxLength(256)
+@pattern("^[A-Za-z0-9_-]+\\.[A-Za-z0-9_.:/@+\\-]+$")
+scalar NamespacedIdentifier extends string;
+
+/** RFC 3339 UTC timestamp. */
+@minLength(1)
+@maxLength(64)
+@format("date-time")
+@pattern("Z$")
+scalar Timestamp extends string;
 
 @minLength(16)
 @maxLength(128)
 @pattern("^[A-Za-z0-9_.:/@+\\-]+$")
 scalar IdempotencyKey extends string;
 
+/** JSON-safe sequence cursor; zero means "before the first event". */
 @minValue(0)
 @maxValue(9007199254740991)
 scalar Sequence extends safeint;
 
+/** Server-assigned event position; the first event is 1. */
+@minValue(1)
+@maxValue(9007199254740991)
+scalar PositiveSequence extends safeint;
+
 @minLength(1)
 @maxLength(1048576)
 scalar BoundedText extends string;
+
+/** Concise, externally shareable text. */
+@minLength(1)
+@maxLength(16384)
+scalar ShareableText extends string;
+
+/** Sorted, unique, namespaced capabilities. Sort order is enforced by the Rust validator. */
+@maxItems(256)
+@uniqueItems
+model Capabilities is NamespacedIdentifier[];
+
+/** Namespaced extension members, for example `vendor.feature`. */
+@maxProperties(64)
+@extension("propertyNames", #{ type: "string", pattern: "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_.-]+$" })
+model Extensions is Record<unknown>;
 
 enum ParticipantRole {
   moderator,
@@ -75,7 +120,7 @@ enum WorkState {
 
 model ProviderIdentity {
   participant_id: Token;
-  provider: Token;
+  provider: ShortToken;
   `model`: Token;
   runtime?: Token;
   instance_id?: Token;
@@ -83,24 +128,24 @@ model ProviderIdentity {
 
 model Participant {
   identity: ProviderIdentity;
-  display_name?: string;
+  @maxLength(512) display_name?: string;
   role?: ParticipantRole;
-  capabilities?: Token[];
+  capabilities?: Capabilities;
   joined_at: Timestamp;
 }
 
 model TrackerLink {
-  kind: Token;
-  reference: string;
-  url: string;
-  relation?: Token;
+  kind: NamespacedIdentifier;
+  @minLength(1) @maxLength(256) reference: string;
+  @minLength(9) @maxLength(2048) @pattern("^https://[^@]+$") url: string;
+  relation?: ShortToken;
 }
 
 model EvidenceRef {
-  kind: Token;
-  uri: string;
+  kind: NamespacedIdentifier;
+  @minLength(1) @maxLength(2048) uri: string;
   digest?: Token;
-  summary?: string;
+  @minLength(1) @maxLength(4096) summary?: string;
 }
 
 model LiveSession {
@@ -108,12 +153,12 @@ model LiveSession {
   protocol: "agent-pontifex.live";
   session_id: Token;
   channel: Token;
-  title: string;
+  @minLength(1) @maxLength(1024) title: string;
   state: SessionState;
   created_by: Token;
   created_at: Timestamp;
-  participants: Participant[];
-  tracker_links?: TrackerLink[];
+  @minItems(1) @maxItems(64) participants: Participant[];
+  @maxItems(64) tracker_links?: TrackerLink[];
   high_water_seq?: Sequence;
   extensions?: Extensions;
 }
@@ -121,13 +166,13 @@ model LiveSession {
 model MessagePayload {
   kind: "message";
   content: BoundedText;
-  content_type?: Token;
+  content_type?: ShortToken;
 }
 
 model ProposalPayload {
   kind: "proposal";
   proposal_id: Token;
-  summary: string;
+  summary: ShareableText;
   details?: BoundedText;
 }
 
@@ -136,16 +181,16 @@ model DecisionPayload {
   proposal_id: Token;
   outcome: DecisionOutcome;
   /** Concise, externally shareable basis; never hidden reasoning. */
-  decision_basis?: string;
+  decision_basis?: ShareableText;
 }
 
 model ToolRequestPayload {
   kind: "tool_request";
   request_id: Token;
-  tool: Token;
+  tool: NamespacedIdentifier;
   action: Token;
-  capability: Token;
-  arguments?: JsonValue;
+  capability: NamespacedIdentifier;
+  arguments?: unknown;
   requires_approval?: boolean;
 }
 
@@ -153,16 +198,16 @@ model ToolResultPayload {
   kind: "tool_result";
   request_id: Token;
   outcome: ToolOutcome;
-  result?: JsonValue;
-  error?: string;
-  evidence?: EvidenceRef[];
+  result?: unknown;
+  error?: ShareableText;
+  @maxItems(128) evidence?: EvidenceRef[];
 }
 
 model ApprovalRequestPayload {
   kind: "approval_request";
   approval_id: Token;
-  subject: string;
-  requested_capabilities: Token[];
+  subject: ShareableText;
+  @minItems(1) requested_capabilities: Capabilities;
   expires_at: Timestamp;
 }
 
@@ -171,39 +216,42 @@ model ApprovalDecisionPayload {
   approval_id: Token;
   outcome: ApprovalOutcome;
   decided_by: Token;
-  decision_basis?: string;
+  decision_basis?: ShareableText;
 }
 
 model WorkStatusPayload {
   kind: "work_status";
   work_id: Token;
   state: WorkState;
-  summary: string;
-  progress_bps?: uint16;
-  evidence?: EvidenceRef[];
+  summary: ShareableText;
+  /** Progress in basis points, from 0 through 10,000. */
+  @maxValue(10000) progress_bps?: uint16;
+  @maxItems(128) evidence?: EvidenceRef[];
 }
 
 model HandoffPayload {
   kind: "handoff";
   work_id: Token;
   to: Token;
-  summary: string;
-  context_refs?: Token[];
+  summary: ShareableText;
+  @maxItems(128) @uniqueItems context_refs?: Token[];
 }
 
 model TrackerUpdatePayload {
   kind: "tracker_update";
   link: TrackerLink;
-  summary: string;
+  summary: ShareableText;
 }
 
 model ErrorPayload {
   kind: "error";
-  code: Token;
-  message: string;
+  code: NamespacedIdentifier;
+  message: ShareableText;
   retryable?: boolean;
 }
 
+/** Payload variants are mutually exclusive, discriminated by the `kind` constant. */
+@oneOf
 union LivePayload {
   MessagePayload,
   ProposalPayload,
@@ -223,7 +271,7 @@ model PublishEvent {
   session_id: Token;
   channel: Token;
   sender: Token;
-  recipients?: Token[];
+  @maxItems(64) @uniqueItems recipients?: Token[];
   correlation_id?: Token;
   causation_id?: Token;
   idempotency_key: IdempotencyKey;
@@ -237,9 +285,9 @@ model LiveEnvelope {
   event_id: Token;
   session_id: Token;
   channel: Token;
-  seq: Sequence;
+  seq: PositiveSequence;
   sender: Token;
-  recipients?: Token[];
+  @maxItems(64) @uniqueItems recipients?: Token[];
   correlation_id?: Token;
   causation_id?: Token;
   idempotency_key: IdempotencyKey;
@@ -257,7 +305,7 @@ model HelloFrame {
   type: "hello";
   participant: ProviderIdentity;
   session_id: Token;
-  capabilities?: Token[];
+  capabilities?: Capabilities;
   resume?: ResumeCursor;
 }
 
@@ -269,7 +317,7 @@ model PublishFrame {
 model AckFrame {
   type: "ack";
   session_id: Token;
-  through_seq: Sequence;
+  through_seq: PositiveSequence;
 }
 
 model PingFrame {
@@ -283,6 +331,8 @@ model LeaveFrame {
   participant_id: Token;
 }
 
+/** Client frames are mutually exclusive, discriminated by the `type` constant. */
+@oneOf
 union ClientFrame {
   HelloFrame,
   PublishFrame,
@@ -306,7 +356,7 @@ model AcceptedFrame {
   type: "accepted";
   client_event_id: Token;
   event_id: Token;
-  seq: Sequence;
+  seq: PositiveSequence;
   replayed?: boolean;
 }
 
@@ -315,7 +365,7 @@ model LaggedFrame {
   session_id: Token;
   expected_after_seq: Sequence;
   high_water_seq: Sequence;
-  recovery_uri: string;
+  @minLength(1) @maxLength(2048) recovery_uri: string;
 }
 
 model PongFrame {
@@ -326,11 +376,13 @@ model PongFrame {
 
 model ServerErrorFrame {
   type: "error";
-  code: Token;
-  message: string;
+  code: NamespacedIdentifier;
+  message: ShareableText;
   retryable?: boolean;
 }
 
+/** Server frames are mutually exclusive, discriminated by the `type` constant. */
+@oneOf
 union ServerFrame {
   WelcomeFrame,
   EventFrame,
