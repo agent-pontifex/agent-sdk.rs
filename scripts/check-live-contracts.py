@@ -84,37 +84,13 @@ def strip_proto_comments(text: str) -> str:
 def assert_closed_schema_objects(value: Any, path: str = "$") -> None:
     if isinstance(value, dict):
         if value.get("type") == "object" and "properties" in value:
-            # Either Draft 2020-12 closing keyword keeps the object closed. The
-            # contract has no object-level composition, so the two are
-            # behaviorally identical here; unevaluatedProperties also stays
-            # closed if composition is introduced later.
-            if (
-                value.get("additionalProperties") is not False
-                and value.get("unevaluatedProperties") is not False
-            ):
-                fail(
-                    f"schema object {path} must set additionalProperties=false "
-                    "or unevaluatedProperties=false"
-                )
+            if value.get("additionalProperties") is not False:
+                fail(f"schema object {path} must set additionalProperties=false")
         for key, child in value.items():
             assert_closed_schema_objects(child, f"{path}/{key}")
     elif isinstance(value, list):
         for index, child in enumerate(value):
             assert_closed_schema_objects(child, f"{path}/{index}")
-
-
-def resolve_local_ref(schema: dict[str, Any], node: Any) -> Any:
-    """Follow `#/$defs/<name>` references so named variants are checked like inline ones."""
-    seen: set[str] = set()
-    while isinstance(node, dict) and "$ref" in node:
-        reference = node["$ref"]
-        if not isinstance(reference, str) or not reference.startswith("#/$defs/"):
-            fail(f"unsupported schema reference {reference!r}")
-        if reference in seen:
-            fail(f"cyclic schema reference {reference!r}")
-        seen.add(reference)
-        node = schema["$defs"][reference[len("#/$defs/"):]]
-    return node
 
 
 def main() -> int:
@@ -154,10 +130,7 @@ def main() -> int:
         if re.search(rf"\b{re.escape(field)}\s*=", proto_code):
             fail(f"hidden-reasoning field leaked into Protobuf: {field}")
 
-    payload_variants = [
-        resolve_local_ref(schema, variant)
-        for variant in schema["$defs"]["live_payload"]["oneOf"]
-    ]
+    payload_variants = schema["$defs"]["live_payload"]["oneOf"]
     schema_kinds = {
         variant["properties"]["kind"]["const"] for variant in payload_variants
     }
@@ -172,7 +145,6 @@ def main() -> int:
 
     for frame_name in ("client_frame", "server_frame"):
         for variant in schema["$defs"][frame_name]["oneOf"]:
-            variant = resolve_local_ref(schema, variant)
             properties = variant["properties"]
             required = variant["required"]
             if "type" not in properties or "type" not in required or "kind" in properties:

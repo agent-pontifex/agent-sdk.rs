@@ -26,7 +26,7 @@ jobs:
           components: "rustfmt,clippy"
 
       - name: Check checked-in live protocol contracts
-        run: python3 scripts/check-live-contracts.py
+        run: cargo test -p agent-pontifex-live-protocol --test live_contracts
 
       - name: Check generated gRPC service projection
         run: python3 scripts/generate-live-grpc.py --check
@@ -62,4 +62,4 @@ jobs:
         run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 
       - name: Re-run protocol contract after native tests
-        run: python3 scripts/check-live-contracts.py
+        run: cargo test -p agent-pontifex-live-protocol --test live_contracts
