@@ -4,6 +4,7 @@ Shared, vendor-neutral Rust contracts and clients for Agent Pontifex-compatible 
 
 ## Crates
 
+- `agent-pontifex-attestation`: bounded signed-result artifact transport, canonical payload hashing, external trust routing, and independent-authority validation; cryptographic verification and side-effect authorization remain downstream finalizer responsibilities.
 - `agent-pontifex-protocol`: versioned discovery, bridge, presence, messaging, context, repository-path lease, and coordinator-job contracts.
 - `agent-pontifex-live-protocol`: replay-safe live-session frames for messages, proposals, decisions, tool intents/results, approvals, status, evidence, handoffs, and tracker links.
 - `agent-pontifex-sdk`: credential-safe typed HTTP clients for bridge and coordinator implementations.
