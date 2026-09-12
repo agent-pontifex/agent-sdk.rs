@@ -24,3 +24,6 @@ env/enc/*
 *.age-key
 keys.txt
 sops-private*.txt
+
+# typespec-json-schema-validator comparison evidence (generated; never an authority)
+.typespec-json-schema-validator/
