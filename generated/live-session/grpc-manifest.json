@@ -1,12 +1,12 @@
 {
   "authorityInputs": {
     "jsonSchema": {
-      "gitBlobSha": "e6f8d248202fe05510ffe7d1754b14642edc1763",
+      "gitBlobSha": "9fe0478c0e445de1642b8e238c74900311327532",
       "path": "contracts/live-session/live-session.schema.json",
       "role": "human-authored-peer-authority"
     },
     "typeSpec": {
-      "gitBlobSha": "5b2cb76a9698398c7e1b076c0816f6cbf6274231",
+      "gitBlobSha": "de93aeeef18e3ddc85a17811b42f0359201e692b",
       "path": "contracts/live-session/live-session.tsp",
       "role": "human-authored-peer-authority"
     }
