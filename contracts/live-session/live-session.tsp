@@ -76,7 +76,7 @@ enum WorkState {
 model ProviderIdentity {
   participant_id: Token;
   provider: Token;
-  model: Token;
+  `model`: Token;
   runtime?: Token;
   instance_id?: Token;
 }

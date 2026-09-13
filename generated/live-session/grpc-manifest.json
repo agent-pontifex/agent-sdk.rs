@@ -6,7 +6,7 @@
       "role": "human-authored-peer-authority"
     },
     "typeSpec": {
-      "gitBlobSha": "50802c3c4b8d6b2898c60a066304231c43d608a9",
+      "gitBlobSha": "5b2cb76a9698398c7e1b076c0816f6cbf6274231",
       "path": "contracts/live-session/live-session.tsp",
       "role": "human-authored-peer-authority"
     }
